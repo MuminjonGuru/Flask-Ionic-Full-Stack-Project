@@ -1,4 +1,5 @@
 from os import environ
+import os
 import json
 from flask import request, _request_ctx_stack, abort
 from functools import wraps
@@ -6,9 +7,10 @@ from jose import jwt
 from urllib.request import urlopen
 
 
-AUTH0_DOMAIN = 'dev-m-guru.auth0.com'
-ALGORITHMS = ['RS256']
-API_AUDIENCE = 'http://localhost:5000'
+AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
+ALGORITHMS = os.getenv('ALGORITHMS')
+API_AUDIENCE = os.getenv('API_AUDIENCE')
+
 
 # AuthError Exception
 '''
@@ -16,27 +18,23 @@ AuthError Exception
 A standardized way to communicate auth failure modes
 '''
 
-
 class AuthError(Exception):
     def __init__(self, error, status_code):
         self.error = error
         self.status_code = status_code
 
-
 # Auth Header
-
 '''
 @TODO implement get_token_auth_header() method
     it should attempt to get the header from the request
-        it should raise an AuthError if no header is present
+    it should raise an AuthError if no header is present
     it should attempt to split bearer and the token
-        it should raise an AuthError if the header is malformed
+    it should raise an AuthError if the header is malformed
     return the token part of the header
 '''
 
 
 def get_token_auth_header():
-
     auth_header = request.headers.get("Authorization", None)
 
     if not auth_header:
@@ -51,7 +49,6 @@ def get_token_auth_header():
             'code': 'invalid_header',
             'description': 'Authorization header must be in the format'
             ' Bearer token'}, 401)
-
     elif header_parts[0].lower() != 'bearer':
         raise AuthError({
             'code': 'invalid_header',
@@ -76,15 +73,14 @@ def get_token_auth_header():
 
 
 def check_permissions(permission, payload):
-    if 'permissions' not in payload:
-        abort(400)
-
-    if permission not in payload['permissions']:
-        raise AuthError({
-            'code': 'unauthorized',
-            'description': 'Permission Not found',
-        }, 401)
-    return True
+    if "permissions" in payload:
+        if permission in payload['permissions']:
+            return True
+    raise AuthError({
+        'success': False,
+        'message': 'Permission not found in JWT',
+        'error': 401
+    }, 401)
 
 
 '''
