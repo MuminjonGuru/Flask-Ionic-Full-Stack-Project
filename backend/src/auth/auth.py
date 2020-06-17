@@ -100,22 +100,15 @@ def check_permissions(permission, payload):
 
 
 def verify_decode_jwt(token):
-    # Get public key from Auth0
     jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
     jwks = json.loads(jsonurl.read())
-
-    # Get the data in the header
     unverified_header = jwt.get_unverified_header(token)
-
-    # Auth0 token should have a key id
+    rsa_key = {}
     if 'kid' not in unverified_header:
         raise AuthError({
             'code': 'invalid_header',
-            'description': 'Authorization malformed'
+            'description': 'Authorization malformed.'
         }, 401)
-
-    rsa_key = {}
-
     for key in jwks['keys']:
         if key['kid'] == unverified_header['kid']:
             rsa_key = {
@@ -125,47 +118,36 @@ def verify_decode_jwt(token):
                 'n': key['n'],
                 'e': key['e']
             }
-            break
-
-    # verify the token
     if rsa_key:
         try:
-            # Validate the token using the rsa_key
             payload = jwt.decode(
                 token,
                 rsa_key,
                 algorithms=ALGORITHMS,
                 audience=API_AUDIENCE,
-                issuer=f'https://{AUTH0_DOMAIN}/'
+                issuer='https://' + AUTH0_DOMAIN + '/'
             )
             return payload
-
         except jwt.ExpiredSignatureError:
-
             raise AuthError({
                 'code': 'token_expired',
                 'description': 'Token expired.'
             }, 401)
-
         except jwt.JWTClaimsError:
-
             raise AuthError({
                 'code': 'invalid_claims',
-                'description': 'Incorrect claims. Please, '
-                'check the audience and issuer.'
+                'description':
+                    'Incorrect claims. Please, check the audience and issuer.'
             }, 401)
-
         except Exception:
-
             raise AuthError({
                 'code': 'invalid_header',
                 'description': 'Unable to parse authentication token.'
             }, 400)
-
     raise AuthError({
-        'code': 'invalid_header',
-        'description': 'Unable to find the appropriate key.'
-    }, 400)
+                'code': 'invalid_header',
+                'description': 'Unable to find the appropriate key.'
+            }, 400)
 
 
 '''
