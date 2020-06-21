@@ -24,6 +24,7 @@ def after_request(response):
     header['Access-Control-Allow-Methods'] = 'POST,GET,PUT,DELETE,PATCH,OPTIONS'
     return response
 
+# Uncommend on first run!
 # db_drop_and_create_all()
 
 # ----------------------------------------------------------------------------#
